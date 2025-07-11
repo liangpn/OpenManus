@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "simple-streamable-http-server": {
+      "type": "streamable_http",
+      "url": "http://192.168.20.11:4000/mcp"
+    }
+  }
+}

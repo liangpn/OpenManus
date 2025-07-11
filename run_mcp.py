@@ -30,8 +30,14 @@ class MCPRunner:
                 command=sys.executable,
                 args=["-m", self.server_reference],
             )
-        else:  # sse
+        elif connection_type == "sse":
             await self.agent.initialize(connection_type="sse", server_url=server_url)
+        elif connection_type == "streamable_http":
+            await self.agent.initialize(
+                connection_type="streamable_http", server_url=server_url
+            )
+        else:
+            raise ValueError(f"Invalid connection type: {connection_type}")
 
         logger.info(f"Connected to MCP server via {connection_type}")
 
@@ -51,7 +57,7 @@ class MCPRunner:
 
     async def run_default(self) -> None:
         """Run the agent in default mode."""
-        prompt = input("Enter your prompt: ")
+        prompt = input("Enter your prompt: 接警单编号：12345，案发地点x坐标：20.2,案发地点y坐标：11.5，管辖单位代码：001")
         if not prompt.strip():
             logger.warning("Empty prompt provided.")
             return
@@ -72,13 +78,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--connection",
         "-c",
-        choices=["stdio", "sse"],
-        default="stdio",
-        help="Connection type: stdio or sse",
+        choices=["stdio", "sse", "streamable_http"],
+        default="streamable_http",
+        help="Connection type: stdio or sse or streamable_http",
     )
     parser.add_argument(
         "--server-url",
-        default="http://127.0.0.1:8000/sse",
+        default="http://192.168.20.11:4000/mcp",
         help="URL for SSE connection",
     )
     parser.add_argument(

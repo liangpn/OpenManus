@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import Field, model_validator
 
@@ -19,7 +19,9 @@ class Manus(ToolCallAgent):
     """A versatile general-purpose agent with support for both local and MCP tools."""
 
     name: str = "Manus"
-    description: str = "A versatile agent that can solve various tasks using multiple tools including MCP-based tools"
+    description: str = (
+        "A versatile agent that can solve various tasks using multiple tools including MCP-based tools"
+    )
 
     system_prompt: str = SYSTEM_PROMPT.format(directory=config.workspace_root)
     next_step_prompt: str = NEXT_STEP_PROMPT
@@ -70,7 +72,9 @@ class Manus(ToolCallAgent):
             try:
                 if server_config.type == "sse":
                     if server_config.url:
-                        await self.connect_mcp_server(server_config.url, server_id)
+                        await self.connect_mcp_server(
+                            server_config.url, server_id, mcp_type="sse"
+                        )
                         logger.info(
                             f"Connected to MCP server {server_id} at {server_config.url}"
                         )
@@ -79,11 +83,19 @@ class Manus(ToolCallAgent):
                         await self.connect_mcp_server(
                             server_config.command,
                             server_id,
-                            use_stdio=True,
-                            stdio_args=server_config.args,
+                            mcp_type="stdio",
+                            mcp_args=server_config.args,
                         )
                         logger.info(
                             f"Connected to MCP server {server_id} using command {server_config.command}"
+                        )
+                elif server_config.type == "streamable_http":
+                    if server_config.url:
+                        await self.connect_mcp_server(
+                            server_config.url, server_id, mcp_type="streamable_http"
+                        )
+                        logger.info(
+                            f"Connected to MCP server {server_id} at {server_config.url}"
                         )
             except Exception as e:
                 logger.error(f"Failed to connect to MCP server {server_id}: {e}")
@@ -92,17 +104,19 @@ class Manus(ToolCallAgent):
         self,
         server_url: str,
         server_id: str = "",
-        use_stdio: bool = False,
-        stdio_args: List[str] = None,
+        mcp_type: Literal["sse", "stdio", "streamable_http"] = "streamable_http",
+        mcp_args: List[str] = [],
     ) -> None:
         """Connect to an MCP server and add its tools."""
-        if use_stdio:
-            await self.mcp_clients.connect_stdio(
-                server_url, stdio_args or [], server_id
-            )
+        if mcp_type == "stdio":
+            await self.mcp_clients.connect_stdio(server_url, mcp_args or [], server_id)
             self.connected_servers[server_id or server_url] = server_url
-        else:
+        elif mcp_type == "sse":
             await self.mcp_clients.connect_sse(server_url, server_id)
+        elif mcp_type == "streamable_http":
+            await self.mcp_clients.connect_streamable_http(server_url, server_id)
+        else:
+            raise ValueError(f"Unsupported MCP type: {mcp_type}")
             self.connected_servers[server_id or server_url] = server_url
 
         # Update available tools with only the new tools from this server
@@ -152,7 +166,7 @@ class Manus(ToolCallAgent):
             for tc in msg.tool_calls
         )
 
-        if browser_in_use:
+        if browser_in_use and self.browser_context_helper:
             self.next_step_prompt = (
                 await self.browser_context_helper.format_next_step_prompt()
             )

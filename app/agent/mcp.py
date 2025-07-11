@@ -27,7 +27,7 @@ class MCPAgent(ToolCallAgent):
     mcp_clients: MCPClients = Field(default_factory=MCPClients)
     available_tools: MCPClients = None  # Will be set in initialize()
 
-    max_steps: int = 20
+    max_steps: int = 3
     connection_type: str = "stdio"  # "stdio" or "sse"
 
     # Track tool schemas to detect changes
@@ -64,6 +64,10 @@ class MCPAgent(ToolCallAgent):
             if not command:
                 raise ValueError("Command is required for stdio connection")
             await self.mcp_clients.connect_stdio(command=command, args=args or [])
+        elif self.connection_type == "streamable_http":
+            if not server_url:
+                raise ValueError("Server URL is required for StreamableHTTP connection")
+            await self.mcp_clients.connect_streamable_http(server_url=server_url)
         else:
             raise ValueError(f"Unsupported connection type: {self.connection_type}")
 
