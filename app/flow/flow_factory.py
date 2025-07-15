@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 
 from app.agent.base import BaseAgent
 from app.flow.base import BaseFlow
-from app.flow.planning import PlanningFlow
+from app.flow.dispatch_planning import PlanningFlow
 
 
 class FlowType(str, Enum):

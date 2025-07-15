@@ -18,6 +18,14 @@
             //     "--server-url",
             //     "http://192.168.20.11:4000/mcp"
             // ]
+        },
+        {
+            "name": "Debugger Flow",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "run_flow.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
         }
     ]
 }
